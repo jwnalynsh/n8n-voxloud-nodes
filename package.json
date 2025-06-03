@@ -36,7 +36,7 @@
 			"dist/credentials/VoxloudApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/GetAContact/GetAContact.node.js"
+			"dist/nodes/Voxloud/Voxloud.node.js"
 		]
 	},
 	"devDependencies": {

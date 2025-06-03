@@ -1,30 +1,55 @@
 import {
 	IAuthenticateGeneric,
 	ICredentialType,
+	ICredentialTestRequest,
 	INodeProperties,
 } from 'n8n-workflow';
 
 export class VoxloudApi implements ICredentialType {
 	name = 'voxloudApi';
 	displayName = 'Voxloud API';
-	// Uses the link to this tutorial as an example
-	// Replace with your own docs links when building your own nodes
-	documentationUrl = 'https://docs.n8n.io/integrations/creating-nodes/build/declarative-style-node/';
+	documentationUrl =
+		'https://developer.voxloud.com/docs/#authentication/';
 	properties: INodeProperties[] = [
+		{
+			displayName: 'Authentication',
+			name: 'authentication',
+			type: 'options',
+			options: [
+				{
+					name: 'API Key',
+					value: 'apiKey',
+				},
+			],
+			default: 'apiKey',
+		},
 		{
 			displayName: 'API Key',
 			name: 'apiKey',
 			type: 'string',
 			typeOptions: { password: true },
 			default: '',
+			displayOptions: {
+				show: {
+					authentication: ['apiKey'],
+				},
+			},
 		},
 	];
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
-			qs: {
-				'api_key': '={{$credentials.apiKey}}'
-			}
+			headers: {
+				'Voverc-Auth': '={{$credentials.apiKey}}',
+			},
+		},
+	};
+
+	test: ICredentialTestRequest = {
+		request: {
+			method: 'POST',
+			baseURL: 'https://developer.voxloud.com/api/v1',
+			url: '/validate-auth',
 		},
 	};
 }

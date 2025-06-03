@@ -1,19 +1,19 @@
 {
-	"node": "n8n-nodes-base.NasaPics",
+	"node": "n8n-nodes-base.voxloud",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": [
-		"Miscellaneous"
+		"Communication"
 	],
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": ""
+				"url": "https://developer.voxloud.com/docs/#authentication"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": ""
+				"url": "https://developer.voxloud.com/docs"
 			}
 		]
 	}
