@@ -36,7 +36,8 @@
 			"dist/credentials/VoxloudApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/Voxloud/Voxloud.node.js"
+			"dist/nodes/Voxloud/Voxloud.node.js",
+			"dist/nodes/Voxloud/VoxloudTrigger.node.js"
 		]
 	},
 	"devDependencies": {
