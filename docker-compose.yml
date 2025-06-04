@@ -9,7 +9,7 @@ services:
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=https://8a8b-103-129-16-33.ngrok-free.app/
+      - WEBHOOK_URL=https://942f-103-129-16-33.ngrok-free.app
       - GENERIC_TIMEZONE=Europe/Rome
       - TZ=Asia/Bangkok
       - EXECUTIONS_DATA_PRUNE=true

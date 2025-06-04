@@ -163,7 +163,7 @@ export const clickToCallFields: INodeProperties[] = [
 		default: '',
 	},
 	{
-		displayName: 'Contact Numner',
+		displayName: 'Contact Number',
 		name: 'contact',
 		type: 'string',
 		required: true,

@@ -6,6 +6,7 @@ import {
 	IWebhookFunctions,
 	IWebhookResponseData,
 	NodeConnectionType,
+	NodeOperationError,
 } from 'n8n-workflow';
 import { voxloudApiRequest } from './V1/GenericFunctions';
 
@@ -16,7 +17,6 @@ export class VoxloudTrigger implements INodeType {
 		icon: 'file:voxloud.svg',
 		group: ['trigger'],
 		version: 1,
-		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Starts the workflow when a Voxloud event occurs',
 		defaults: {
 			name: 'Voxloud Trigger',
@@ -27,6 +27,11 @@ export class VoxloudTrigger implements INodeType {
 			{
 				name: 'voxloudApi',
 				required: true,
+				displayOptions: {
+					show: {
+						authentication: ['apiKey'],
+					},
+				},
 			},
 		],
 		webhooks: [
@@ -36,57 +41,62 @@ export class VoxloudTrigger implements INodeType {
 				responseMode: 'onReceived',
 				path: 'webhook',
 			},
-			{
-				// This webhook is used to set up the initial webhook URL
-				name: 'setup',
-				httpMethod: 'GET',
-				responseMode: 'onReceived',
-				path: 'webhook',
-			},
 		],
 		properties: [
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'options',
+				options: [
+					{
+						name: 'API Key',
+						value: 'apiKey',
+					},
+				],
+				default: 'apiKey',
+			},
 			{
 				displayName: 'Event',
 				name: 'eventName',
 				type: 'options',
 				options: [
 					{
-						name: 'After Fax Click to Call',
-						value: 'telephony.clickToCall',
-						description: 'Triggered AFTER a click-to-call event finished',
-					},
-					{
-						name: 'After Fax Received',
-						value: 'telephony.fax',
-						description: 'Triggered AFTER a fax event finished',
-					},
-					{
-						name: 'After Phone Call',
-						value: 'telephony.hangup',
-						description: 'Triggered AFTER a call event finished',
-					},
-					{
-						name: 'Call Hung Up',
-						value: 'call.hungup',
-						description: 'Triggered when a call is hung up',
-					},
-					{
-						name: 'Phone Call Answered',
-						value: 'call.answered',
+						name: 'Call Answered',
+						value: 'CALL_ANSWERED',
 						description: 'Triggered when a call is answered',
 					},
 					{
-						name: 'Phone Call Inbound Received',
-						value: 'call.inbound',
+						name: 'Call Hangup',
+						value: 'CALL_HANGUP',
+						description: 'Triggered when a call is hung up',
+					},
+					{
+						name: 'Call Incoming',
+						value: 'CALL_INCOMING',
 						description: 'Triggered when an inbound call is received',
 					},
 					{
-						name: 'Phone Call Started',
-						value: 'call.start',
+						name: 'Call Started',
+						value: 'CALL_STARTED',
 						description: 'Triggered when an outbound or internal call is started',
 					},
+					{
+						name: 'Click to Call',
+						value: 'CLICK_TO_CALL',
+						description: 'Triggered after a click-to-call event finished',
+					},
+					{
+						name: 'Fax Call',
+						value: 'FAX_CALL',
+						description: 'Triggered after a fax event finished',
+					},
+					{
+						name: 'Phone Call',
+						value: 'PHONE_CALL',
+						description: 'Triggered after a phone call event finished',
+					},
 				],
-				default: 'call.inbound',
+				default: 'CALL_INCOMING',
 				required: true,
 			},
 		],
@@ -94,24 +104,29 @@ export class VoxloudTrigger implements INodeType {
 	webhookMethods = {
 		default: {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
-				const response = await voxloudApiRequest.call(
-					this,
-					'GET',
-					'/webhook-subscriptions',
-					{},
-				);
-				const subscriptions = Array.isArray(response) ? response : (response?.results ?? []);
-
-				for (const subscription of subscriptions) {
-					await voxloudApiRequest.call(
-						this,
-						'DELETE',
-						`/webhook-subscriptions/${subscription.id}`,
-						{},
+				const webhookUrl = this.getNodeWebhookUrl('default');
+				const eventType = this.getNodeParameter('eventName') as string;
+				let response;
+				try {
+					response = await voxloudApiRequest.call(this, 'GET', '/webhook-subscriptions', {});
+				} catch (error) {
+					throw new NodeOperationError(
+						this.getNode(),
+						`Voxloud webhook check error: ${error.message || error}`,
 					);
 				}
-
-				return false;
+				const subscriptions = Array.isArray(response) ? response : (response?.results ?? []);
+				if (this.logger) {
+					this.logger.info(`checkExists subscriptions: ${JSON.stringify(subscriptions)}`);
+					this.logger.info(
+						subscriptions.some(
+							(sub: IDataObject) => sub.callback_url === webhookUrl && sub.event_type === eventType,
+						),
+					);
+				}
+				return subscriptions.some(
+					(sub: IDataObject) => sub.callback_url === webhookUrl && sub.event_type === eventType,
+				);
 			},
 
 			async create(this: IHookFunctions): Promise<boolean> {
@@ -121,17 +136,27 @@ export class VoxloudTrigger implements INodeType {
 					callback_url: webhookUrl,
 					event_type: this.getNodeParameter('eventName') as string,
 				};
-				await voxloudApiRequest.call(this, 'POST', endpoint, body);
+				try {
+					await voxloudApiRequest.call(this, 'POST', endpoint, body);
+				} catch (error) {
+					throw new NodeOperationError(
+						this.getNode(),
+						`Voxloud webhook create error: ${error.message || error}`,
+					);
+				}
+				if (this.logger) {
+					this.logger.info(`created webhook with: ${JSON.stringify(body)}`);
+				}
 				return true;
 			},
 
 			async delete(this: IHookFunctions): Promise<boolean> {
-				const currentWebhookUrl = this.getNodeWebhookUrl('default') as string;
+				const webhookUrl = this.getNodeWebhookUrl('default');
+				const eventType = this.getNodeParameter('eventName') as string;
 				const response = await voxloudApiRequest.call(this, 'GET', '/webhook-subscriptions', {});
-				const subscriptions = response?.results ?? [];
-
-				for (const subscription of subscriptions) {
-					if (subscription.callback_url === currentWebhookUrl) {
+				const subscriptions = Array.isArray(response) ? response : (response?.results ?? []);
+				for (const subscription of subscriptions as IDataObject[]) {
+					if (subscription.callback_url === webhookUrl && subscription.event_type === eventType) {
 						await voxloudApiRequest.call(
 							this,
 							'DELETE',
@@ -139,6 +164,9 @@ export class VoxloudTrigger implements INodeType {
 							{},
 						);
 					}
+				}
+				if (this.logger) {
+					this.logger.info(`deleted webhook with url: ${webhookUrl} and event type: ${eventType}`);
 				}
 				return true;
 			},
