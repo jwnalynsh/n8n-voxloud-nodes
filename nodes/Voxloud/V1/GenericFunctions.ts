@@ -30,10 +30,6 @@ export async function voxloudApiRequest(
 	} satisfies IRequestOptions;
 
 	try {
-		if (this.logger) {
-			this.logger.info(`voxloudAPICALL with: ${JSON.stringify(options)}`);
-			this.logger.info(`voxloudAPICALL authenticationMethod: ${authenticationMethod}`);
-		}
 		if (authenticationMethod === 'apiKey') {
 			const credentialType = 'voxloudApi';
 			return await this.helpers.requestWithAuthentication.call(this, credentialType, options);

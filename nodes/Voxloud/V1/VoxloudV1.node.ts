@@ -138,7 +138,7 @@ export class VoxloudV1 implements INodeType {
 					body.crm_name = this.getNodeParameter('crmName', i, '') as string;
 					body.crm_contact_url = this.getNodeParameter('crmContactUrl', i, '') as string;
 					const endpoint = `/contacts/${contactId}`;
-					responseData = await voxloudApiRequest.call(this, 'POST', endpoint, body);
+					responseData = await voxloudApiRequest.call(this, 'PUT', endpoint, body);
 				} else if (operation === 'delete') {
 					const contactId = this.getNodeParameter('contactId', i) as string;
 					const endpoint = `/contacts/${contactId}`;

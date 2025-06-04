@@ -116,14 +116,6 @@ export class VoxloudTrigger implements INodeType {
 					);
 				}
 				const subscriptions = Array.isArray(response) ? response : (response?.results ?? []);
-				if (this.logger) {
-					this.logger.info(`checkExists subscriptions: ${JSON.stringify(subscriptions)}`);
-					this.logger.info(
-						subscriptions.some(
-							(sub: IDataObject) => sub.callback_url === webhookUrl && sub.event_type === eventType,
-						),
-					);
-				}
 				return subscriptions.some(
 					(sub: IDataObject) => sub.callback_url === webhookUrl && sub.event_type === eventType,
 				);
