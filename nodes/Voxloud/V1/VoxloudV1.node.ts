@@ -147,7 +147,12 @@ export class VoxloudV1 implements INodeType {
 			} else if (resource === 'user') {
 				if (operation === 'getMany') {
 					const uri = 'https://developer.voxloud.com/api/v2/users'; // API Version 2 endpoint for users
-					responseData = await voxloudApiRequest.call(this, 'GET', '', {}, {}, uri);
+					const getManyResp = await voxloudApiRequest.call(this, 'GET', '', {}, {}, uri);
+					const items = Array.isArray(getManyResp) ? getManyResp : (getManyResp?.results ?? []);
+					for (const item of items) {
+						returnData.push({ json: item });
+					}
+					continue; // skip push because already done
 				}
 			} else if (resource === 'clickToCall') {
 				if (operation === 'get') {
@@ -156,7 +161,12 @@ export class VoxloudV1 implements INodeType {
 					responseData = await voxloudApiRequest.call(this, 'GET', endpoint, {});
 				} else if (operation === 'getmany') {
 					const endpoint = '/click-to-call';
-					responseData = await voxloudApiRequest.call(this, 'GET', endpoint, {});
+					const getManyResp = await voxloudApiRequest.call(this, 'GET', endpoint, {});
+					const items = Array.isArray(getManyResp) ? getManyResp : (getManyResp?.results ?? []);
+					for (const item of items) {
+						returnData.push({ json: item });
+					}
+					continue; // skip push because already done
 				} else if (operation === 'create') {
 					const body: Record<string, string> = {};
 					body.name = this.getNodeParameter('name', i) as string;
