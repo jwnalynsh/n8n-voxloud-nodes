@@ -9,7 +9,6 @@ import { NodeConnectionType } from 'n8n-workflow';
 import { contactOperations, contactFields } from './ContactDescription';
 import { voxloudApiRequest } from './GenericFunctions';
 import { userFields, userOperations } from './UserDescription';
-import { clickToCallFields, clickToCallOperations } from './ClickToCallDescription';
 export class VoxloudV1 implements INodeType {
 	description: INodeTypeDescription;
 
@@ -62,10 +61,6 @@ export class VoxloudV1 implements INodeType {
 							name: 'User',
 							value: 'user',
 						},
-						{
-							name: 'Click to Call',
-							value: 'clickToCall',
-						},
 					],
 					default: 'contact',
 				},
@@ -75,9 +70,6 @@ export class VoxloudV1 implements INodeType {
 				// USER ACTIONS
 				...userOperations,
 				...userFields,
-				// CLICK TO CALL ACTIONS
-				...clickToCallOperations,
-				...clickToCallFields,
 			],
 		};
 	}
@@ -153,38 +145,6 @@ export class VoxloudV1 implements INodeType {
 						returnData.push({ json: item });
 					}
 					continue; // skip push because already done
-				}
-			} else if (resource === 'clickToCall') {
-				if (operation === 'get') {
-					const clickToCallId = this.getNodeParameter('clickToCallId', i) as string;
-					const endpoint = `/click-to-call/${clickToCallId}`;
-					responseData = await voxloudApiRequest.call(this, 'GET', endpoint, {});
-				} else if (operation === 'getmany') {
-					const endpoint = '/click-to-call';
-					const getManyResp = await voxloudApiRequest.call(this, 'GET', endpoint, {});
-					const items = Array.isArray(getManyResp) ? getManyResp : (getManyResp?.results ?? []);
-					for (const item of items) {
-						returnData.push({ json: item });
-					}
-					continue; // skip push because already done
-				} else if (operation === 'create') {
-					const body: Record<string, string> = {};
-					body.name = this.getNodeParameter('name', i) as string;
-					body.extension = this.getNodeParameter('extension', i) as string;
-					body.outboundNumber = this.getNodeParameter('outboundNumber', i) as string;
-					body.dial_first = this.getNodeParameter('dialFirst', i) as string;
-					const endpoint = '/click-to-call';
-					responseData = await voxloudApiRequest.call(this, 'POST', endpoint, body);
-				} else if (operation === 'delete') {
-					const clickToCallId = this.getNodeParameter('clickToCallId', i) as string;
-					const endpoint = `/click-to-call/${clickToCallId}`;
-					responseData = await voxloudApiRequest.call(this, 'DELETE', endpoint, {});
-				} else if (operation === 'connect') {
-					const body: Record<string, string> = {};
-					const clickToCallId = this.getNodeParameter('clickToCallId', i) as string;
-					body.contact = this.getNodeParameter('contact', i) as string;
-					const endpoint = `/click-to-call/${clickToCallId}/connect`;
-					responseData = await voxloudApiRequest.call(this, 'POST', endpoint, body);
 				}
 			}
 
